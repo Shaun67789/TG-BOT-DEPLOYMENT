@@ -1,33 +1,17 @@
-// app.js — UI helpers (safe for Render)
+// Manual dependency installer
+function installDep(botName){
+    const input = document.getElementById("dep-input-" + botName);
+    if(!input.value) return alert("Enter package name");
 
-function disableButton(btn, text) {
-    btn.innerText = text;
-    btn.style.opacity = "0.6";
-    btn.style.pointerEvents = "none";
-}
-
-function startBot(botName, btn) {
-    disableButton(btn, "Starting...");
-    window.location.href = `/start/${botName}`;
-}
-
-function stopBot(botName, btn) {
-    disableButton(btn, "Stopping...");
-    window.location.href = `/stop/${botName}`;
-}
-
-// Live logs (AJAX, no page refresh)
-function startLogStream(botName) {
-    const box = document.getElementById("log-box");
-    if (!box) return;
-
-    setInterval(() => {
-        fetch(`/logs_raw/${botName}`)
-            .then(r => r.text())
-            .then(t => {
-                box.textContent = t;
-                box.scrollTop = box.scrollHeight;
-            })
-            .catch(() => {});
-    }, 2000);
+    fetch("/install_dep/" + botName, {
+        method:"POST",
+        headers:{"Content-Type":"application/x-www-form-urlencoded"},
+        body:"package=" + encodeURIComponent(input.value)
+    })
+    .then(r=>r.json())
+    .then(data=>{
+        alert(data.msg);
+        input.value="";
+    })
+    .catch(e=>alert("Install failed"));
 }
