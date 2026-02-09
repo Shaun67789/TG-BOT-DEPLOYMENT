@@ -2,7 +2,10 @@
 {% block content %}
 <h2>{{ name }}</h2>
 <p>Status: {{ status }}</p>
-<a class="btn" href="/start/{{ name }}">▶ Start</a>
-<a class="btn red" href="/stop/{{ name }}">⛔ Stop</a>
+
+<button class="btn" onclick="startBot('{{ name }}', this)">▶ Start</button>
+<button class="btn red" onclick="stopBot('{{ name }}', this)">⛔ Stop</button>
 <a class="btn" href="/logs/{{ name }}">📜 Logs</a>
+
+<script src="/static/app.js"></script>
 {% endblock %}
