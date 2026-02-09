@@ -1,6 +1,11 @@
 {% extends "layout.html" %}
 {% block content %}
 <h2>Logs - {{ name }}</h2>
-<pre class="logs">{{ logs }}</pre>
-<script>setTimeout(()=>location.reload(),2000)</script>
+
+<pre id="log-box" class="logs">Loading logs...</pre>
+
+<script src="/static/app.js"></script>
+<script>
+    startLogStream("{{ name }}");
+</script>
 {% endblock %}
