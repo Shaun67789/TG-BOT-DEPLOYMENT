@@ -1,23 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta http-equiv="refresh" content="2">
-<style>
-pre {
-background: black;
-color: lime;
-padding: 10px;
-height: 80vh;
-overflow-y: scroll;
-}
-</style>
-</head>
-<body>
-
-<h2>Logs: {{ name }}</h2>
-<pre>{{ logs }}</pre>
-
-<a href="/bot/{{ name }}">⬅ Back</a>
-
-</body>
-</html>
+{% extends "layout.html" %}
+{% block content %}
+<h2>Logs - {{ name }}</h2>
+<pre class="logs">{{ logs }}</pre>
+<script>setTimeout(()=>location.reload(),2000)</script>
+{% endblock %}
