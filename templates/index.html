@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bot Panel</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<h1>🤖 Bot Hosting Panel</h1>
+<a href="/upload">➕ Upload Bot</a>
+
+<ul>
+{% for bot in bots %}
+<li>
+<b>{{ bot.name }}</b> — {{ bot.status }}
+<a href="/bot/{{ bot.name }}">Manage</a>
+</li>
+{% endfor %}
+</ul>
+</body>
+</html>
