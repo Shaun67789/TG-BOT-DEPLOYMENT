@@ -1,10 +1,11 @@
 import os
-import zipfile
 import subprocess
-from flask import Flask, render_template, request, redirect, url_for
-from bot_manager import start_bot, stop_bot, bot_status, read_logs
+from flask import Flask, render_template, request, redirect, url_for, flash
+from bot_manager import start_bot, stop_bot, status, get_logs
+from utils import safe_extract_zip
 
 app = Flask(__name__)
+app.secret_key = "secure-panel-key"
 
 BOTS_DIR = "Bots"
 os.makedirs(BOTS_DIR, exist_ok=True)
@@ -12,29 +13,28 @@ os.makedirs(BOTS_DIR, exist_ok=True)
 @app.route("/")
 def index():
     bots = []
-    for bot in os.listdir(BOTS_DIR):
-        bots.append({
-            "name": bot,
-            "status": bot_status(bot)
-        })
+    for b in os.listdir(BOTS_DIR):
+        bots.append({"name": b, "status": status(b)})
     return render_template("index.html", bots=bots)
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
     if request.method == "POST":
-        zip_file = request.files["zip"]
-        main_file = request.form["main_file"]
+        zipf = request.files.get("zip")
+        main_file = request.form.get("main")
 
-        bot_name = zip_file.filename.replace(".zip", "")
+        if not zipf or not main_file:
+            flash("Missing fields")
+            return redirect("/upload")
+
+        bot_name = zipf.filename.replace(".zip", "")
         bot_path = os.path.join(BOTS_DIR, bot_name)
         os.makedirs(bot_path, exist_ok=True)
 
-        zip_path = os.path.join(bot_path, zip_file.filename)
-        zip_file.save(zip_path)
+        zip_path = os.path.join(bot_path, zipf.filename)
+        zipf.save(zip_path)
 
-        with zipfile.ZipFile(zip_path, "r") as z:
-            z.extractall(bot_path)
-
+        safe_extract_zip(zip_path, bot_path)
         os.remove(zip_path)
 
         if os.path.exists(os.path.join(bot_path, "requirements.txt")):
@@ -44,36 +44,30 @@ def upload():
             )
 
         with open(os.path.join(bot_path, "main.txt"), "w") as f:
-            f.write(main_file)
+            f.write(main_file.strip())
 
-        return redirect(url_for("index"))
+        return redirect("/")
 
     return render_template("upload.html")
 
 @app.route("/bot/<name>")
-def bot_page(name):
-    return render_template(
-        "bot.html",
-        name=name,
-        status=bot_status(name)
-    )
+def bot(name):
+    return render_template("bot.html", name=name, status=status(name))
 
 @app.route("/start/<name>")
 def start(name):
-    bot_path = os.path.join(BOTS_DIR, name)
-    main_file = open(os.path.join(bot_path, "main.txt")).read()
-    start_bot(name, main_file)
-    return redirect(url_for("bot_page", name=name))
+    main = open(f"{BOTS_DIR}/{name}/main.txt").read().strip()
+    start_bot(name, main)
+    return redirect(f"/bot/{name}")
 
 @app.route("/stop/<name>")
 def stop(name):
     stop_bot(name)
-    return redirect(url_for("bot_page", name=name))
+    return redirect(f"/bot/{name}")
 
 @app.route("/logs/<name>")
 def logs(name):
-    content = read_logs(name)
-    return render_template("logs.html", name=name, logs=content)
+    return render_template("logs.html", name=name, logs=get_logs(name))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
