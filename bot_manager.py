@@ -7,60 +7,60 @@ LOGS_DIR = "logs"
 
 os.makedirs(LOGS_DIR, exist_ok=True)
 
-running_bots = {}
+running = {}
 
-def stream_logs(process, log_file):
-    with open(log_file, "a", encoding="utf-8") as f:
-        for line in iter(process.stdout.readline, b""):
+def _log_stream(proc, logfile):
+    with open(logfile, "a", encoding="utf-8") as f:
+        for line in iter(proc.stdout.readline, b""):
+            if not line:
+                break
             f.write(line.decode(errors="ignore"))
             f.flush()
 
 def start_bot(bot_name, main_file):
-    bot_path = os.path.join(BOTS_DIR, bot_name)
-    file_path = os.path.join(bot_path, main_file)
+    if bot_name in running:
+        return False, "Already running"
 
-    if not os.path.exists(file_path):
+    bot_path = os.path.join(BOTS_DIR, bot_name)
+    main_path = os.path.join(bot_path, main_file)
+
+    if not os.path.isfile(main_path):
         return False, "Main file not found"
 
-    log_file = os.path.join(LOGS_DIR, f"{bot_name}.log")
+    logfile = os.path.join(LOGS_DIR, f"{bot_name}.log")
 
-    process = subprocess.Popen(
+    proc = subprocess.Popen(
         ["python", main_file],
         cwd=bot_path,
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        bufsize=1
+        stderr=subprocess.STDOUT
     )
 
-    thread = threading.Thread(
-        target=stream_logs,
-        args=(process, log_file),
-        daemon=True
-    )
-    thread.start()
+    t = threading.Thread(target=_log_stream, args=(proc, logfile), daemon=True)
+    t.start()
 
-    running_bots[bot_name] = process
-    return True, process.pid
+    running[bot_name] = proc
+    return True, proc.pid
 
 def stop_bot(bot_name):
-    process = running_bots.get(bot_name)
-    if not process:
+    proc = running.get(bot_name)
+    if not proc:
         return False
 
-    process.terminate()
-    process.wait()
-    del running_bots[bot_name]
+    proc.terminate()
+    proc.wait(timeout=5)
+    del running[bot_name]
     return True
 
-def bot_status(bot_name):
-    process = running_bots.get(bot_name)
-    if process and process.poll() is None:
+def status(bot_name):
+    proc = running.get(bot_name)
+    if proc and proc.poll() is None:
         return "Running"
     return "Stopped"
 
-def read_logs(bot_name):
-    log_file = os.path.join(LOGS_DIR, f"{bot_name}.log")
-    if not os.path.exists(log_file):
+def get_logs(bot_name):
+    path = os.path.join(LOGS_DIR, f"{bot_name}.log")
+    if not os.path.exists(path):
         return ""
-    with open(log_file, "r", encoding="utf-8") as f:
-        return f.read()[-5000:]
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()[-8000:]
