@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: python-bot-hosting
+    name: python-bot-panel
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
