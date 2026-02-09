@@ -1,0 +1,11 @@
+body {
+    background: #0d0d0d;
+    color: #eaeaea;
+    font-family: monospace;
+    padding: 20px;
+}
+
+a {
+    color: #00ffff;
+    text-decoration: none;
+}
